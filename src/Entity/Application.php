@@ -6,6 +6,8 @@ use App\Enum\ApplicationStatus;
 use App\Repository\ApplicationRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ApplicationRepository::class)]
 class Application
@@ -13,30 +15,44 @@ class Application
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['application:read'])]
+    
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['application:read'])]
+    #[Assert\NotBlank]
     private ?string $company = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['application:read'])]
+    #[Assert\NotBlank]
     private ?string $position = null;
 
     #[ORM\Column(enumType: ApplicationStatus::class)]
+    #[Groups(['application:read'])]
     private ApplicationStatus $status = ApplicationStatus::APPLIED;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['application:read'])]
     private ?string $location = null;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['application:read'])]
+    #[Assert\Positive]
     private ?int $salaryExpectation = null;
 
     #[ORM\Column]
+    #[Groups(['application:read'])]
+    #[Assert\NotNull]
     private ?\DateTimeImmutable $appliedAt = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(['application:read'])]
     private ?string $notes = null;
 
     #[ORM\Column]
+    #[Groups(['application:read'])]
     private ?\DateTimeImmutable $createdAt = null;
 
     public function getId(): ?int
@@ -116,7 +132,7 @@ class Application
 
     public function getNote(): ?string
     {
-        return $this->note;
+        return $this->notes;
     }
 
     public function setNote(?string $notes): static
