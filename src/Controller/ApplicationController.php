@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Application;
+use App\Enum\ApplicationStatus;
 use App\Repository\ApplicationRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -118,5 +119,53 @@ final class ApplicationController extends AbstractController
         $em->flush();
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
+    }
+
+    #[Route('/{id}/status', name: 'application_update_status', methods: ['PATCH'])]
+    public function updateStatus(
+        Application $application,
+        Request $request,
+        EntityManagerInterface $em
+    ): JsonResponse {
+        try {
+            $data = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            return $this->json(['error' => 'Invalid JSON payload'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $newStatusValue = $data['status'] ?? null;
+        if ($newStatusValue === null) {
+            return $this->json(['error' => 'Field "status" is required'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $newStatus = ApplicationStatus::tryFrom($newStatusValue);
+        if ($newStatus === null) {
+            return $this->json(
+                ['error' => sprintf('Invalid status "%s"', $newStatusValue)],
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+
+        $currentStatus = $application->getStatus();
+        if (!$currentStatus->canTransitionTo($newStatus)) {
+            return $this->json(
+                ['error' => sprintf(
+                    'Cannot change status from "%s" to "%s"',
+                    $currentStatus->value,
+                    $newStatus->value
+                )],
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+
+        $application->setStatus($newStatus);
+        $em->flush();
+
+        return $this->json(
+            $application,
+            Response::HTTP_OK,
+            [],
+            ['groups' => 'application:read']
+        );
     }
 }
