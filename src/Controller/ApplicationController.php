@@ -43,11 +43,18 @@ final class ApplicationController extends AbstractController
         ValidatorInterface $validator,
         EntityManagerInterface $em
     ): JsonResponse {
-        $application = $serializer->deserialize(
-            $request->getContent(),
-            Application::class,
-            'json'
-        );
+        try {
+            $application = $serializer->deserialize(
+                $request->getContent(),
+                Application::class,
+                'json'
+            );
+        } catch (\Throwable $e) {
+            return $this->json(
+                ['error' => 'Invalid JSON payload'],
+                Response::HTTP_BAD_REQUEST
+            );
+        }
 
         $errors = $validator->validate($application);
         if (count($errors) > 0) {
@@ -75,12 +82,19 @@ final class ApplicationController extends AbstractController
         ValidatorInterface $validator,
         EntityManagerInterface $em
     ): JsonResponse {
-        $serializer->deserialize(
-            $request->getContent(),
-            Application::class,
-            'json',
-            ['object_to_populate' => $application]
-        );
+    try {
+            $serializer->deserialize(
+                $request->getContent(),
+                Application::class,
+                'json',
+                ['object_to_populate' => $application]
+            );
+        } catch (\Throwable $e) {
+            return $this->json(
+                ['error' => 'Invalid JSON payload'],
+                Response::HTTP_BAD_REQUEST
+            );
+        }
 
         $errors = $validator->validate($application);
         if (count($errors) > 0) {
