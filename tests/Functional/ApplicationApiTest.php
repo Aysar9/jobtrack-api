@@ -54,4 +54,38 @@ class ApplicationApiTest extends WebTestCase
 
         $this->assertResponseStatusCodeSame(404);
     }
+
+    public function testForbiddenStatusTransitionReturns422(): void
+    {
+        $client = static::createClient();
+
+        // Erst eine Bewerbung anlegen (Status ist per Default "applied")
+        $client->request(
+            'POST',
+            '/api/applications',
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/json'],
+            json_encode([
+                'company' => 'Transition Test GmbH',
+                'position' => 'Developer',
+                'appliedAt' => '2026-07-01',
+            ])
+        );
+
+        $created = json_decode($client->getResponse()->getContent(), true);
+        $id = $created['id'];
+
+        // Verbotener Übergang: applied → accepted (nicht erlaubt)
+        $client->request(
+            'PATCH',
+            '/api/applications/' . $id . '/status',
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/json'],
+            json_encode(['status' => 'accepted'])
+        );
+
+        $this->assertResponseStatusCodeSame(422);
+    }
 }
